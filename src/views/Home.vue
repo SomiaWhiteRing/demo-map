@@ -3,12 +3,20 @@
   <div id="main">
     <changeDate :years="years" @changeYear="changeYear"/>
     <div id="myChart" class="map" />
+    <div class="mapChoose">
+      <span v-for="(item, index) in parentInfo" :key="item.code">
+        <span class="title" @click="chooseArea(item, index)">{{
+          item.cityName == "全国" ? "中国" : item.cityName
+        }}</span>
+        <span class="icon" v-show="index + 1 != parentInfo.length">></span>
+      </span>
+    </div>
   </div>
 </template>
 <script>
 import echarts from 'echarts'
 import changeDate from '@/components/changeDate'
-import china from '../../static/china.json'
+import map from '../../static/china.json'
 export default {
   name: 'Sandbox',
   components: {
@@ -26,38 +34,38 @@ export default {
       // },
       geoGpsMap: {}, // 起始点的中心坐标
       geoCoordMap: {
-        台湾: [121.5135, 25.0308],
-        黑龙江: [127.9688, 45.368],
-        内蒙古: [110.3467, 41.4899],
-        吉林: [125.8154, 44.2584],
-        北京市: [116.4551, 40.2539],
-        辽宁: [123.1238, 42.1216],
-        河北: [114.4995, 38.1006],
-        天津: [117.4219, 39.4189],
-        山西: [112.3352, 37.9413],
-        陕西: [109.1162, 34.2004],
-        甘肃: [103.5901, 36.3043],
-        宁夏: [106.3586, 38.1775],
-        青海: [101.4038, 36.8207],
-        新疆: [87.9236, 43.5883],
-        西藏: [91.11, 29.97],
-        四川: [103.9526, 30.7617],
-        重庆: [108.384366, 30.439702],
-        山东: [117.1582, 36.8701],
-        河南: [113.4668, 34.6234],
-        江苏: [118.8062, 31.9208],
-        安徽: [117.29, 32.0581],
-        湖北: [114.3896, 30.6628],
-        浙江: [119.5313, 29.8773],
-        福建: [119.4543, 25.9222],
-        江西: [116.0046, 28.6633],
-        湖南: [113.0823, 28.2568],
-        贵州: [106.6992, 26.7682],
-        云南: [102.9199, 25.4663],
-        广东: [113.12244, 23.009505],
-        广西: [108.479, 23.1152],
-        海南: [110.3893, 19.8516],
-        上海: [121.4648, 31.2891]
+        // 台湾: [121.5135, 25.0308],
+        // 黑龙江: [127.9688, 45.368],
+        // 内蒙古: [110.3467, 41.4899],
+        // 吉林: [125.8154, 44.2584],
+        // 北京市: [116.4551, 40.2539],
+        // 辽宁: [123.1238, 42.1216],
+        // 河北: [114.4995, 38.1006],
+        // 天津: [117.4219, 39.4189],
+        // 山西: [112.3352, 37.9413],
+        // 陕西: [109.1162, 34.2004],
+        // 甘肃: [103.5901, 36.3043],
+        // 宁夏: [106.3586, 38.1775],
+        // 青海: [101.4038, 36.8207],
+        // 新疆: [87.9236, 43.5883],
+        // 西藏: [91.11, 29.97],
+        // 四川: [103.9526, 30.7617],
+        // 重庆: [108.384366, 30.439702],
+        // 山东: [117.1582, 36.8701],
+        // 河南: [113.4668, 34.6234],
+        // 江苏: [118.8062, 31.9208],
+        // 安徽: [117.29, 32.0581],
+        // 湖北: [114.3896, 30.6628],
+        // 浙江: [119.5313, 29.8773],
+        // 福建: [119.4543, 25.9222],
+        // 江西: [116.0046, 28.6633],
+        // 湖南: [113.0823, 28.2568],
+        // 贵州: [106.6992, 26.7682],
+        // 云南: [102.9199, 25.4663],
+        // 广东: [113.12244, 23.009505],
+        // 广西: [108.479, 23.1152],
+        // 海南: [110.3893, 19.8516],
+        // 上海: [121.4648, 31.2891]
       }, // 全部省份的名称与中心坐标
       colors: [
         [
@@ -113,13 +121,15 @@ export default {
       // 引入Amap的部分
       geoJson: {
         features: []
-      }
+      },
+      parentInfo: [{
+        cityName: '全国',
+        code: 100000
+      }],
+      pointData: [] // 点的数据
     }
   },
   mounted () {
-    this.createProvinceList()
-    this.setData()
-    this.drawMap()
     this.getGeoJson(100000)
   },
   methods: {
@@ -148,34 +158,19 @@ export default {
       })
     },
     getMapData () {
-      const mapData = {}
-      const pointData = {}
-      const sum = {}
-      this.years.forEach((item) => {
-        mapData[item] = []
-        pointData[item] = []
-        sum[item] = 0
-        this.geoJson.features.forEach((j) => {
-          const value = Math.random() * 3000
-          mapData[item].push({
-            name: j.properties.name,
-            value: value,
-            cityCode: j.properties.adcode
-          })
-          pointData[item].push({
-            name: j.properties.name,
-            value: [j.properties.center[0], j.properties.center[1], value],
-            cityCode: j.properties.adcode
-          })
-          sum[item] += value
+      const pointData = []
+      this.geoJson.features.forEach((j) => {
+        pointData.push({
+          name: j.properties.name,
+          value: [j.properties.center[0], j.properties.center[1]],
+          cityCode: j.properties.adcode
         })
-        mapData[item] = mapData[item].sort(function (a, b) {
-          return b.value - a.value
-        })
+        this.geoCoordMap[j.properties.name] = j.properties.center
       })
-
-      // this.initEcharts(mapData, pointData, sum)
-      console.log(mapData, pointData, sum)
+      this.pointData = pointData
+      this.drawMap()
+      this.createProvinceList()
+      this.setData()
     },
     createProvinceList () {
       for (let k = 0; k < this.craeteNum; k++) {
@@ -186,9 +181,10 @@ export default {
       this.mapData = JSON.parse(JSON.stringify(new Array(this.craeteNum).fill([])))
     },
     setData () {
+      console.log('this.geoCoordMap:', this.geoCoordMap)
       for (const key in this.geoCoordMap) {
         for (let k = 0; k < this.craeteNum; k++) {
-          if (Math.random() > 0.7 && this.province[k] !== key) {
+          if ((Math.random() > 0.7 && this.province[k] !== key)) {
             this.mapData[k].push({
               province: this.province[k],
               name: key,
@@ -197,6 +193,7 @@ export default {
           }
         }
       }
+      console.log('this.mapData', this.mapData)
       for (let i = 0; i < this.mapData.length; i++) {
         this.barData.push([])
         this.barLegend.push([])
@@ -206,9 +203,12 @@ export default {
         }
       }
     },
-    drawMap () {
+    drawMap (mapData, pointData, sum) {
       this.$nextTick(function () {
-        this.$echarts.registerMap('china', china)
+        console.log(map)
+        console.log(this.geoJson)
+        // this.$echarts.registerMap('map', map)
+        this.$echarts.registerMap('map', this.geoJson)
         // 基于准备好的dom，初始化echarts实例
         const myChart = echarts.init(document.getElementById('myChart'))
         // 设置option
@@ -218,7 +218,7 @@ export default {
             axisType: 'category',
             autoPlay: true,
             show: false,
-            playInterval: 10000,
+            playInterval: 5000,
             left: '10%',
             right: '10%',
             bottom: '3%',
@@ -280,10 +280,10 @@ export default {
             // },
             geo: {
               show: true,
-              map: 'china',
+              map: 'map',
               roam: true,
-              zoom: 1,
-              center: [113.83531246, 34.0267395887],
+              zoom: 1.1,
+              center: this.parentInfo.length === 1 ? ['118.83531246', '32.0267395887'] : false,
               label: {
                 emphasis: {
                   show: false
@@ -337,7 +337,7 @@ export default {
             },
             {
               id: 'statistic',
-              text: this.year + '年' + this.province[n] + '省流出情况',
+              text: this.year + '年' + this.province[n] + '流出情况',
               left: '75%',
               top: '3%',
               textStyle: {
@@ -419,12 +419,13 @@ export default {
                   }
                 }
               },
-              // 地图？
+              // 地图
               {
                 type: 'map',
-                map: 'china',
+                map: 'map',
                 geoIndex: 0,
-                aspectScale: 0.75, // 长宽比
+                zoom: 1.3,
+                // aspectScale: 0.75, // 长宽比
                 showLegendSymbol: false, // 存在legend时显示
                 label: {
                   normal: {
@@ -447,10 +448,9 @@ export default {
                     areaColor: '#2B91B7'
                   }
                 },
-                animation: false,
-                data: this.mapData
+                animation: false
               },
-              // 地图点的动画效果
+              // 散点的动画效果
               {
                 //  name: 'Top 5',
                 type: 'effectScatter',
@@ -482,7 +482,7 @@ export default {
                 },
                 zlevel: 1
               },
-              // 地图线的动画效果
+              // 迁移线的动画效果
               {
                 type: 'lines',
                 zlevel: 2,
@@ -518,15 +518,46 @@ export default {
             ]
           })
         }
+        console.log('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
         console.log(optionXyMap01)
         // 绘制图表
-        myChart.setOption(optionXyMap01)
+        this.$nextTick(() => {
+          myChart.setOption(optionXyMap01, true)
+          myChart.off('click')
+          myChart.on('click', this.echartsMapClick)
+          myChart.off('mouseover')
+          myChart.on('mouseover', this.echartsMapMouseover)
+        })
       })
     },
-    convertData (data) {
+    echartsMapClick (params) { // 地图点击事件
+      const areaList = this.pointData.map(item => item.name)
+      if (!areaList.includes(params.name)) {
+      // if (!params.data) {
+        return
+      }
+      const data = this.pointData.find(item => item.name === params.name)
+      if (
+        this.parentInfo[this.parentInfo.length - 1].code === data.cityCode
+      ) {
+        return
+      }
+      this.parentInfo.push({
+        cityName: data.name,
+        code: data.cityCode
+      })
+      console.log(data)
+      this.clearMemories()
+      this.getGeoJson(data.cityCode)
+    },
+    convertData (data) { // 绘制散点
       // console.log(data)
       const res = []
       // let sum = 0
+      console.log('drawing...', data)
+      if (data.length === 0) {
+        return res
+      }
       for (let i = 0; i < data.length; i++) {
         const geoCoord = this.geoCoordMap[data[i].name]
         if (geoCoord) {
@@ -546,7 +577,7 @@ export default {
       // console.log(res)
       return res
     },
-    convertToLineData (data, gps) {
+    convertToLineData (data, gps) { // 绘制迁移线
       const res = []
       let sum = 0
       for (let i = 0; i < data.length; i++) {
@@ -570,7 +601,7 @@ export default {
       }
       return res
     },
-    randomNum (minNum, maxNum) {
+    randomNum (minNum, maxNum) { // 随机数生成函数
       switch (arguments.length) {
         case 1:
           return parseInt(Math.random() * minNum + 1, 10)
@@ -580,7 +611,17 @@ export default {
           return 0
       }
     },
-    async changeYear (year) {
+    clearMemories () { // 清除内存
+      this.mapData = []
+      this.geoGpsMap = []
+      this.geoCoordMap = {}
+      this.barData = []
+      this.barLegend = []
+      this.province = []
+      this.colorIndex = 0
+      console.log('=============clear memories=============')
+    },
+    async changeYear (year) { // 切换年份
       this.geoGpsMap = {}
       this.colorIndex = 0
       // province= ['福建' '广东' '上海' '台湾' '吉林']
@@ -592,6 +633,15 @@ export default {
       await this.createProvinceList()
       await this.setData()
       await this.drawMap()
+    },
+    // 选择切换市县
+    chooseArea (val, index) {
+      if (this.parentInfo.length === index + 1) {
+        return
+      }
+      this.parentInfo.splice(index + 1)
+      this.clearMemories()
+      this.getGeoJson(this.parentInfo[this.parentInfo.length - 1].code)
     }
   }
 }
@@ -600,5 +650,25 @@ export default {
 .map {
   width: calc(100vw - 16px);
   height: calc(100vh - 16px);
+}
+
+.mapChoose {
+  position: absolute;
+  left: 20px;
+  top: 55px;
+  color: #eee;
+
+  .title {
+    padding: 5px;
+    border-top: 1px solid rgba(147, 235, 248, 0.8);
+    border-bottom: 1px solid rgba(147, 235, 248, 0.8);
+    cursor: pointer;
+  }
+
+  .icon {
+    font-family: "simsun";
+    font-size: 25px;
+    margin: 0 11px;
+  }
 }
 </style>
