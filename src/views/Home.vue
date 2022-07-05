@@ -24,7 +24,7 @@ export default {
       //   5: [87.9236, 43.5883],
       //   6: [91.11, 29.97]
       // },
-      geoGpsMap: {},
+      geoGpsMap: {}, // 起始点的中心坐标
       geoCoordMap: {
         台湾: [121.5135, 25.0308],
         黑龙江: [127.9688, 45.368],
@@ -58,7 +58,7 @@ export default {
         广西: [108.479, 23.1152],
         海南: [110.3893, 19.8516],
         上海: [121.4648, 31.2891]
-      },
+      }, // 全部省份的名称与中心坐标
       colors: [
         [
           '#1DE9B6',
@@ -100,35 +100,94 @@ export default {
           '#91CA8C',
           '#F49F42'
         ]
-      ],
-      colorIndex: 0,
+      ], // 展示的色彩列表
+      colorIndex: 0, // 当前展示的色彩
       // province: ['福建', '广东', '上海', '台湾', '吉林'],
-      province: [],
-      mapData: [[], [], [], [], []],
-      categoryData: [],
-      barData: [],
-      barLegend: [],
-      years: ['2018', '2019', '2020', '2021', '2022'],
-      year: '2018'
+      province: [], // 省份的列表
+      mapData: [], // 每个省下辖的数据
+      barData: [], // 柱状图的参数
+      barLegend: [], // 柱状图的名称
+      craeteNum: 6, // 生成的案例起始点的数量
+      years: ['2018', '2019', '2020', '2021', '2022'], // 年份表对应的年份
+      year: '2018', // 当前timeline走到的年份
+      // 引入Amap的部分
+      geoJson: {
+        features: []
+      }
     }
   },
   mounted () {
     this.createProvinceList()
     this.setData()
     this.drawMap()
+    this.getGeoJson(100000)
   },
   methods: {
+    getGeoJson (adcode) {
+      const that = this
+      // eslint-disable-next-line no-undef
+      AMapUI.loadUI(['geo/DistrictExplorer'], DistrictExplorer => {
+        var districtExplorer = new DistrictExplorer()
+        districtExplorer.loadAreaNode(adcode, function (error, areaNode) {
+          if (error) {
+            console.error(error)
+            return
+          }
+          const Json = areaNode.getSubFeatures()
+          console.log(Json)
+          if (Json.length > 0) {
+            that.geoJson.features = Json
+          } else if (Json.length === 0) {
+            that.geoJson.features = that.geoJson.features.filter(
+              item => item.properties.adcode === adcode
+            )
+            if (that.geoJson.features.length === 0) return
+          }
+          that.getMapData()
+        })
+      })
+    },
+    getMapData () {
+      const mapData = {}
+      const pointData = {}
+      const sum = {}
+      this.years.forEach((item) => {
+        mapData[item] = []
+        pointData[item] = []
+        sum[item] = 0
+        this.geoJson.features.forEach((j) => {
+          const value = Math.random() * 3000
+          mapData[item].push({
+            name: j.properties.name,
+            value: value,
+            cityCode: j.properties.adcode
+          })
+          pointData[item].push({
+            name: j.properties.name,
+            value: [j.properties.center[0], j.properties.center[1], value],
+            cityCode: j.properties.adcode
+          })
+          sum[item] += value
+        })
+        mapData[item] = mapData[item].sort(function (a, b) {
+          return b.value - a.value
+        })
+      })
+
+      // this.initEcharts(mapData, pointData, sum)
+      console.log(mapData, pointData, sum)
+    },
     createProvinceList () {
-      for (let k = 0; k < 5; k++) {
+      for (let k = 0; k < this.craeteNum; k++) {
         const i = Math.floor(Math.random() * Object.keys(this.geoCoordMap).length)
         this.province.push(Object.keys(this.geoCoordMap)[i])
         this.geoGpsMap[k] = this.geoCoordMap[Object.keys(this.geoCoordMap)[i]]
       }
+      this.mapData = JSON.parse(JSON.stringify(new Array(this.craeteNum).fill([])))
     },
     setData () {
       for (const key in this.geoCoordMap) {
-        this.categoryData.push(key)
-        for (let k = 0; k < 5; k++) {
+        for (let k = 0; k < this.craeteNum; k++) {
           if (Math.random() > 0.7 && this.province[k] !== key) {
             this.mapData[k].push({
               province: this.province[k],
@@ -526,8 +585,7 @@ export default {
       this.colorIndex = 0
       // province= ['福建' '广东' '上海' '台湾' '吉林']
       this.province = []
-      this.mapData = [[], [], [], [], []]
-      this.categoryData = []
+      this.mapData = []
       this.barData = []
       this.barLegend = []
       this.year = year

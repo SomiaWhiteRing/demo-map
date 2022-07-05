@@ -47,6 +47,14 @@
     },
     "rules": {}
   },
+  "vue": {
+    "configureWebpack": {
+      "externals": {
+        "AMap": "window.AMap",
+        "AMapUI": "window.AMapUI"
+      }
+    }
+  },
   "browserslist": [
     "> 1%",
     "last 2 versions",
