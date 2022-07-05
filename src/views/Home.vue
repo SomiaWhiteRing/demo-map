@@ -16,7 +16,7 @@
 <script>
 import echarts from 'echarts'
 import changeDate from '@/components/changeDate'
-import map from '../../static/china.json'
+// import map from '../../static/china.json'
 export default {
   name: 'Sandbox',
   components: {
@@ -144,7 +144,12 @@ export default {
             return
           }
           const Json = areaNode.getSubFeatures()
-          console.log(Json)
+          // 如果是全国地图，则把福建置于最前
+          if (adcode === 100000) {
+            Json.unshift(Json[12])
+            Json.splice(13, 1)
+          }
+          // console.log(Json)
           if (Json.length > 0) {
             that.geoJson.features = Json
           } else if (Json.length === 0) {
@@ -153,6 +158,7 @@ export default {
             )
             if (that.geoJson.features.length === 0) return
           }
+          // 如果是全国地图，则把福建置于第一个
           that.getMapData()
         })
       })
@@ -173,18 +179,21 @@ export default {
       this.setData()
     },
     createProvinceList () {
-      for (let k = 0; k < this.craeteNum; k++) {
-        const i = Math.floor(Math.random() * Object.keys(this.geoCoordMap).length)
+      const craeteNum = Object.keys(this.geoCoordMap).length
+      for (let k = 0; k < craeteNum; k++) {
+        // const i = Math.floor(Math.random() * Object.keys(this.geoCoordMap).length)
+        const i = k
         this.province.push(Object.keys(this.geoCoordMap)[i])
         this.geoGpsMap[k] = this.geoCoordMap[Object.keys(this.geoCoordMap)[i]]
       }
-      this.mapData = JSON.parse(JSON.stringify(new Array(this.craeteNum).fill([])))
+      this.mapData = JSON.parse(JSON.stringify(new Array(craeteNum).fill([])))
     },
     setData () {
-      console.log('this.geoCoordMap:', this.geoCoordMap)
+      // console.log('this.geoCoordMap:', this.geoCoordMap)
+      const craeteNum = Object.keys(this.geoCoordMap).length
       for (const key in this.geoCoordMap) {
-        for (let k = 0; k < this.craeteNum; k++) {
-          if ((Math.random() > 0.7 && this.province[k] !== key)) {
+        for (let k = 0; k < craeteNum; k++) {
+          if ((Math.random() > 0.7 && this.province[k] !== key) || this.mapData[k].length === 0) {
             this.mapData[k].push({
               province: this.province[k],
               name: key,
@@ -193,7 +202,7 @@ export default {
           }
         }
       }
-      console.log('this.mapData', this.mapData)
+      // console.log('this.mapData', this.mapData)
       for (let i = 0; i < this.mapData.length; i++) {
         this.barData.push([])
         this.barLegend.push([])
@@ -205,8 +214,8 @@ export default {
     },
     drawMap (mapData, pointData, sum) {
       this.$nextTick(function () {
-        console.log(map)
-        console.log(this.geoJson)
+        // console.log(map)
+        // console.log(this.geoJson)
         // this.$echarts.registerMap('map', map)
         this.$echarts.registerMap('map', this.geoJson)
         // 基于准备好的dom，初始化echarts实例
@@ -518,8 +527,6 @@ export default {
             ]
           })
         }
-        console.log('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
-        console.log(optionXyMap01)
         // 绘制图表
         this.$nextTick(() => {
           myChart.setOption(optionXyMap01, true)
@@ -528,6 +535,18 @@ export default {
           myChart.off('mouseover')
           myChart.on('mouseover', this.echartsMapMouseover)
         })
+      })
+    },
+    echartsMapMouseover (params) { // 地图鼠标悬浮事件
+      if (params.componentSubType !== 'map') return
+      if (!this.province.includes(params.name)) return
+      // console.log(this.province.indexOf(params.name))
+      const index = this.province.indexOf(params.name)
+      const myChart = echarts.init(document.getElementById('myChart'))
+      myChart.dispatchAction({
+        type: 'timelineChange',
+        // 时间点的 index
+        currentIndex: index
       })
     },
     echartsMapClick (params) { // 地图点击事件
@@ -546,7 +565,7 @@ export default {
         cityName: data.name,
         code: data.cityCode
       })
-      console.log(data)
+      // console.log(data)
       this.clearMemories()
       this.getGeoJson(data.cityCode)
     },
@@ -554,7 +573,7 @@ export default {
       // console.log(data)
       const res = []
       // let sum = 0
-      console.log('drawing...', data)
+      // console.log('drawing...', data)
       if (data.length === 0) {
         return res
       }
@@ -619,7 +638,7 @@ export default {
       this.barLegend = []
       this.province = []
       this.colorIndex = 0
-      console.log('=============clear memories=============')
+      // console.log('=============clear memories=============')
     },
     async changeYear (year) { // 切换年份
       this.geoGpsMap = {}
