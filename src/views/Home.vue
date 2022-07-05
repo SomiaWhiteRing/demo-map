@@ -1,24 +1,30 @@
 <template>
   <!--为echarts准备一个具备大小的容器dom-->
   <div id="main">
+    <changeDate :years="years" @changeYear="changeYear"/>
     <div id="myChart" class="map" />
   </div>
 </template>
 <script>
 import echarts from 'echarts'
+import changeDate from '@/components/changeDate'
 import china from '../../static/china.json'
 export default {
   name: 'Sandbox',
+  components: {
+    changeDate
+  },
   data () {
     return {
-      geoGpsMap: {
-        1: [127.9688, 45.368],
-        2: [116.4551, 40.2539],
-        3: [109.1162, 34.2004],
-        4: [113.12244, 23.009505],
-        5: [87.9236, 43.5883],
-        6: [91.11, 29.97]
-      },
+      // geoGpsMap: {
+      //   1: [127.9688, 45.368],
+      //   2: [116.4551, 40.2539],
+      //   3: [109.1162, 34.2004],
+      //   4: [113.12244, 23.009505],
+      //   5: [87.9236, 43.5883],
+      //   6: [91.11, 29.97]
+      // },
+      geoGpsMap: {},
       geoCoordMap: {
         台湾: [121.5135, 25.0308],
         黑龙江: [127.9688, 45.368],
@@ -96,50 +102,48 @@ export default {
         ]
       ],
       colorIndex: 0,
-      year: ['2014', '2015', '2016', '2017', '2018'],
-      mapData: [[], [], [], [], [], []],
+      // province: ['福建', '广东', '上海', '台湾', '吉林'],
+      province: [],
+      mapData: [[], [], [], [], []],
       categoryData: [],
-      barData: []
+      barData: [],
+      barLegend: [],
+      years: ['2018', '2019', '2020', '2021', '2022'],
+      year: '2018'
     }
   },
   mounted () {
+    this.createProvinceList()
     this.setData()
     this.drawMap()
   },
   methods: {
+    createProvinceList () {
+      for (let k = 0; k < 5; k++) {
+        const i = Math.floor(Math.random() * Object.keys(this.geoCoordMap).length)
+        this.province.push(Object.keys(this.geoCoordMap)[i])
+        this.geoGpsMap[k] = this.geoCoordMap[Object.keys(this.geoCoordMap)[i]]
+      }
+    },
     setData () {
       for (const key in this.geoCoordMap) {
         this.categoryData.push(key)
-        this.mapData[0].push({
-          year: '2014',
-          name: key,
-          value: this.randomNum(100, 300)
-        })
-        this.mapData[1].push({
-          year: '2015',
-          name: key,
-          value: this.randomNum(100, 300)
-        })
-        this.mapData[2].push({
-          year: '2016',
-          name: key,
-          value: this.randomNum(100, 300)
-        })
-        this.mapData[3].push({
-          year: '2017',
-          name: key,
-          value: this.randomNum(100, 300)
-        })
-        this.mapData[4].push({
-          year: '2018',
-          name: key,
-          value: this.randomNum(100, 300)
-        })
+        for (let k = 0; k < 5; k++) {
+          if (Math.random() > 0.7 && this.province[k] !== key) {
+            this.mapData[k].push({
+              province: this.province[k],
+              name: key,
+              value: this.randomNum(100, 300)
+            })
+          }
+        }
       }
       for (let i = 0; i < this.mapData.length; i++) {
         this.barData.push([])
+        this.barLegend.push([])
         for (var j = 0; j < this.mapData[i].length; j++) {
-          this.barData[i].push(this.mapData[i][j].value)
+          this.barData[i].push(this.mapData[i][j])
+          this.barLegend[i].push(this.mapData[i][j].name)
         }
       }
     },
@@ -151,10 +155,11 @@ export default {
         // 设置option
         const optionXyMap01 = {
           timeline: {
-            data: this.year,
+            data: this.province,
             axisType: 'category',
             autoPlay: true,
-            playInterval: 3000,
+            show: false,
+            playInterval: 10000,
             left: '10%',
             right: '10%',
             bottom: '3%',
@@ -192,12 +197,11 @@ export default {
                 borderColor: '#aaa'
               }
             }
-
           },
           baseOption: {
-            animation: true,
+            animation: false,
             animationDuration: 1000,
-            animationEasing: 'cubicInOut',
+            animationEasing: 'quadraticInOut',
             animationDurationUpdate: 1000,
             animationEasingUpdate: 'cubicInOut',
             grid: {
@@ -206,15 +210,15 @@ export default {
               bottom: '10%',
               width: '20%'
             },
-            tooltip: {
-              trigger: 'axis', // hover触发器
-              axisPointer: { // 坐标轴指示器，坐标轴触发有效
-                type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
-                shadowStyle: {
-                  color: 'rgba(150,150,150,0.1)' // hover颜色
-                }
-              }
-            },
+            // tooltip: {
+            //   trigger: 'axis', // hover触发器
+            //   axisPointer: { // 坐标轴指示器，坐标轴触发有效
+            //     type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
+            //     shadowStyle: {
+            //       color: 'rgba(150,150,150,0.1)' // hover颜色
+            //     }
+            //   }
+            // },
             geo: {
               show: true,
               map: 'china',
@@ -261,25 +265,25 @@ export default {
 
         }
         // 推入数据
-        for (var n = 0; n < this.year.length; n++) {
+        for (var n = 0; n < this.province.length; n++) {
           optionXyMap01.options.push({
             backgroundColor: '#051b4a',
             title: [{
-              /* text: '地图',
-                         subtext: '内部数据请勿外传',
-                         left: 'center',
-                         textStyle: {
-                             color: '#fff'
-                         } */
+              // text: '地图',
+              // subtext: '内部数据请勿外传',
+              // left: 'center',
+              // textStyle: {
+              //   color: '#fff'
+              // }
             },
             {
               id: 'statistic',
-              text: this.year[n] + '年数据统计情况',
+              text: this.year + '年' + this.province[n] + '省流出情况',
               left: '75%',
-              top: '8%',
+              top: '3%',
               textStyle: {
                 color: '#fff',
-                fontSize: 30
+                fontSize: 24
               }
             }
             ],
@@ -327,10 +331,10 @@ export default {
                   color: '#ddd'
                 }
               },
-              data: this.categoryData
+              data: this.barLegend[n]
             },
             series: [
-              // 未知作用
+              // 散点图
               {
                 // 文字和标志
                 name: 'light',
@@ -438,7 +442,7 @@ export default {
                     curveness: 0.3 // 尾迹线条曲直度
                   }
                 },
-                data: this.convertToLineData(this.mapData[n], this.geoGpsMap[Math.ceil(Math.random() * 6)])
+                data: this.convertToLineData(this.mapData[n], this.geoGpsMap[n])
               },
               // 柱状图
               {
@@ -455,13 +459,15 @@ export default {
             ]
           })
         }
+        console.log(optionXyMap01)
         // 绘制图表
         myChart.setOption(optionXyMap01)
-        console.log('test')
       })
     },
     convertData (data) {
+      // console.log(data)
       const res = []
+      // let sum = 0
       for (let i = 0; i < data.length; i++) {
         const geoCoord = this.geoCoordMap[data[i].name]
         if (geoCoord) {
@@ -469,23 +475,37 @@ export default {
             name: data[i].name,
             value: geoCoord.concat(data[i].value)
           })
+          // sum += data[i].value
         }
       }
+      const geoCoord = this.geoCoordMap[data[0].province]
+      res.push({
+        name: data[0].province,
+        // value: geoCoord.concat(sum)
+        value: geoCoord.concat(300)
+      })
+      // console.log(res)
       return res
     },
     convertToLineData (data, gps) {
-      var res = []
-      for (var i = 0; i < data.length; i++) {
-        var dataItem = data[i]
-        var fromCoord = this.geoCoordMap[dataItem.name]
-        var toCoord = gps // 郑州
-        //  var toCoord = geoGps[Math.random()*3];
+      const res = []
+      let sum = 0
+      for (let i = 0; i < data.length; i++) {
+        const dataItem = data[i]
+        sum += dataItem.value
+      }
+      for (let i = 0; i < data.length; i++) {
+        const dataItem = data[i]
+        const fromCoord = this.geoCoordMap[dataItem.name]
+        const toCoord = gps // 郑州
+        //  const toCoord = geoGps[Math.random()*3];
         if (fromCoord && toCoord) {
           res.push([{
-            coord: fromCoord,
+            coord: toCoord,
             value: dataItem.value
           }, {
-            coord: toCoord
+            coord: fromCoord,
+            value: sum
           }])
         }
       }
@@ -500,6 +520,20 @@ export default {
         default:
           return 0
       }
+    },
+    async changeYear (year) {
+      this.geoGpsMap = {}
+      this.colorIndex = 0
+      // province= ['福建' '广东' '上海' '台湾' '吉林']
+      this.province = []
+      this.mapData = [[], [], [], [], []]
+      this.categoryData = []
+      this.barData = []
+      this.barLegend = []
+      this.year = year
+      await this.createProvinceList()
+      await this.setData()
+      await this.drawMap()
     }
   }
 }
