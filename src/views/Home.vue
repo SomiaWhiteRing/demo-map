@@ -11,6 +11,21 @@
         <span class="icon" v-show="index + 1 != parentInfo.length">></span>
       </span>
     </div>
+    <div class="mapSelect">
+      <el-select
+        v-model="selectType"
+        placeholder="请选择"
+        style="width:80px"
+        @change="typeChange"
+        size="mini">
+        <el-option
+          v-for="item in selectList"
+          :key="item.value"
+          :label="item.name"
+          :value="item.value">
+        </el-option>
+      </el-select>
+    </div>
   </div>
 </template>
 <script>
@@ -126,7 +141,19 @@ export default {
         cityName: '全国',
         code: 100000
       }],
-      pointData: [] // 点的数据
+      pointData: [], // 点的数据
+      // 选择器
+      selectType: '流出',
+      selectList: [
+        {
+          name: '流入',
+          value: '流入'
+        },
+        {
+          name: '流出',
+          value: '流出'
+        }
+      ]
     }
   },
   mounted () {
@@ -285,7 +312,7 @@ export default {
             animationDurationUpdate: 1000,
             animationEasingUpdate: 'cubicInOut',
             grid: {
-              right: '1%',
+              right: '2%',
               top: '15%',
               bottom: '10%',
               width: '20%'
@@ -358,7 +385,7 @@ export default {
             },
             {
               id: 'statistic',
-              text: this.year + '年' + this.province[n] + '流出情况',
+              text: this.year + '年' + this.province[n] + this.selectType + '情况',
               left: '65%',
               top: '3%',
               textStyle: {
@@ -621,13 +648,24 @@ export default {
         const toCoord = gps // 郑州
         //  const toCoord = geoGps[Math.random()*3];
         if (fromCoord && toCoord) {
-          res.push([{
-            coord: toCoord,
-            value: dataItem.value
-          }, {
-            coord: fromCoord,
-            value: sum
-          }])
+          if (this.selectType === '流出') {
+            res.push([{
+              coord: toCoord,
+              value: dataItem.value
+            }, {
+              coord: fromCoord,
+              value: sum
+            }])
+          }
+          if (this.selectType === '流入') {
+            res.push([{
+              coord: fromCoord,
+              value: sum
+            }, {
+              coord: toCoord,
+              value: dataItem.value
+            }])
+          }
         }
       }
       return res
@@ -680,6 +718,10 @@ export default {
       this.parentInfo.splice(index + 1)
       this.clearMemories()
       this.getGeoJson(this.parentInfo[this.parentInfo.length - 1].code)
+    },
+    typeChange () {
+      this.clearMemories()
+      this.getGeoJson(this.parentInfo[this.parentInfo.length - 1].code)
     }
   }
 }
@@ -708,5 +750,11 @@ export default {
     font-size: 25px;
     margin: 0 11px;
   }
+}
+.mapSelect {
+  position: absolute;
+  left: 20px;
+  top: 105px;
+  color: #eee;
 }
 </style>
