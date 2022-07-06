@@ -205,12 +205,24 @@ export default {
       // console.log('this.mapData', this.mapData)
       for (let i = 0; i < this.mapData.length; i++) {
         this.barData.push([])
-        this.barLegend.push([])
+        // this.barLegend.push([])
         for (var j = 0; j < this.mapData[i].length; j++) {
           this.barData[i].push(this.mapData[i][j])
-          this.barLegend[i].push(this.mapData[i][j].name)
+          // this.barLegend[i].push(this.mapData[i][j].name)
         }
       }
+      // 排序barData
+      for (let i = 0; i < this.barData.length; i++) {
+        this.barLegend.push([])
+        this.barData[i].sort((a, b) => {
+          return a.value - b.value
+        })
+        for (let j = 0; j < this.barData[i].length; j++) {
+          this.barLegend[i].push(this.barData[i][j].name)
+        }
+      }
+      // console.log(this.barData)
+      // console.log(this.barLegend)
     },
     drawMap (mapData, pointData, sum) {
       this.$nextTick(function () {
@@ -347,7 +359,7 @@ export default {
             {
               id: 'statistic',
               text: this.year + '年' + this.province[n] + '流出情况',
-              left: '75%',
+              left: '65%',
               top: '3%',
               textStyle: {
                 color: '#fff',
