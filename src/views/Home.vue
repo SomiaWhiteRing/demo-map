@@ -1,7 +1,7 @@
 <template>
   <!--为echarts准备一个具备大小的容器dom-->
   <div id="main">
-    <changeDate :years="years" @changeYear="changeYear"/>
+    <changeDate :years="years" @changeYear="changeYear" @changePlay="changePlay"/>
     <div id="myChart" class="map" />
     <div class="mapChoose">
       <span v-for="(item, index) in parentInfo" :key="item.code">
@@ -193,7 +193,7 @@ export default {
       const craeteNum = Object.keys(this.geoCoordMap).length
       for (const key in this.geoCoordMap) {
         for (let k = 0; k < craeteNum; k++) {
-          if ((Math.random() > 0.7 && this.province[k] !== key) || this.mapData[k].length === 0) {
+          if ((Math.random() > 0.7 && this.province[k] !== key) || (this.mapData[k].length === 0 && this.province[k] !== key)) {
             this.mapData[k].push({
               province: this.province[k],
               name: key,
@@ -291,7 +291,7 @@ export default {
               show: true,
               map: 'map',
               roam: true,
-              zoom: 1.1,
+              zoom: 1.2,
               center: this.parentInfo.length === 1 ? ['118.83531246', '32.0267395887'] : false,
               label: {
                 emphasis: {
@@ -652,6 +652,13 @@ export default {
       await this.createProvinceList()
       await this.setData()
       await this.drawMap()
+    },
+    changePlay (event) { // 切换播放状态
+      const myChart = echarts.init(document.getElementById('myChart'))
+      myChart.dispatchAction({
+        type: 'timelinePlayChange',
+        playState: event
+      })
     },
     // 选择切换市县
     chooseArea (val, index) {

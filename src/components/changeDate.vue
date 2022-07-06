@@ -25,9 +25,9 @@ export default {
         timeline: {
           data: this.years,
           axisType: 'category',
-          // autoPlay: true,
+          autoPlay: true,
           // show: false,
-          playInterval: 10000,
+          playInterval: 315576000000,
           left: '10%',
           right: '10%',
           bottom: '3%',
@@ -68,9 +68,13 @@ export default {
         }
       }
       timeLine.setOption(optionTimeline)
-      timeLine.on('timelineChanged', (params) => {
-        console.log(params)
-        this.changeYear(this.years[params.currentIndex])
+      timeLine.on('timelineChanged', (params) => { // 将年份的变更传达给父组件
+        // console.log(params)
+        this.$emit('changeYear', this.years[params.currentIndex])
+      })
+      timeLine.on('timelinePlayChanged', (params) => { // 将播放状态的变更传达给父组件
+        // console.log(params)
+        this.$emit('changePlay', params.playState)
       })
     }
   }
@@ -93,6 +97,6 @@ export default {
   width: calc(100vw - 16px);
   // height: calc(100vh - 16px);
   height: 100px;
-  bottom: 8px;
+  bottom: 3%;
 }
 </style>
