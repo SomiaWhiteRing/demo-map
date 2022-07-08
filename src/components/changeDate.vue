@@ -1,7 +1,7 @@
 <template>
   <div class="hello">
     <!-- <button @click="changeYear">用力刷新</button> -->
-    <div id="timeline" class="timeline"/>
+    <div ref="timeline" class="timeline"/>
   </div>
 </template>
 
@@ -12,15 +12,20 @@ export default {
   props: {
     years: Array
   },
+  data () {
+    return {
+      playState: true
+    }
+  },
   mounted () {
     this.drawTimeline()
   },
   methods: {
     changeYear (year) {
-      this.$emit('changeYear', year)
+      this.$emit('changeYear', year, this.playState)
     },
     drawTimeline () {
-      const timeLine = echarts.init(document.getElementById('timeline'))
+      const timeLine = echarts.init(this.$refs.timeline)
       const optionTimeline = {
         timeline: {
           data: this.years,
@@ -68,12 +73,15 @@ export default {
         }
       }
       timeLine.setOption(optionTimeline)
+      window.addEventListener('resize', () => { timeLine.resize() })
+
       timeLine.on('timelineChanged', (params) => { // 将年份的变更传达给父组件
-        // console.log(params)
+        console.log(timeLine)
         this.$emit('changeYear', this.years[params.currentIndex])
       })
       timeLine.on('timelinePlayChanged', (params) => { // 将播放状态的变更传达给父组件
         // console.log(params)
+        this.playState = params.playState
         this.$emit('changePlay', params.playState)
       })
     }
